@@ -68,6 +68,7 @@ function applyTransform() {
   clampPan();
   canvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
   zoomIndicator.textContent = `${Math.round(view.scale * 100)}%`;
+  updateCursorScreenPos();
 }
 
 function zoomAt(clientX, clientY, nextScale) {
@@ -361,6 +362,7 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 let activeSection = null;
 let typeTimer = null;
 let wanderTimer = null;
+let cursorCanvasPos = null;
 
 function randomPointInView(frame) {
   const rect = frame.getBoundingClientRect();
@@ -391,6 +393,16 @@ function randomPointInView(frame) {
 
 function moveTagTo(frame) {
   const { x, y } = randomPointInView(frame);
+  // Stored in canvas-space (not screen-space) so the tag can be
+  // repositioned to stay put on the canvas as the user pans/zooms.
+  cursorCanvasPos = { x: (x - view.x) / view.scale, y: (y - view.y) / view.scale };
+  updateCursorScreenPos();
+}
+
+function updateCursorScreenPos() {
+  if (!cursorCanvasPos) return;
+  const x = cursorCanvasPos.x * view.scale + view.x;
+  const y = cursorCanvasPos.y * view.scale + view.y;
   cursorTag.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
@@ -411,6 +423,7 @@ function setActiveCursorSection(section) {
 
   if (!section) {
     cursorTag.classList.remove('is-active');
+    cursorCanvasPos = null;
     return;
   }
 
@@ -452,20 +465,7 @@ cursorSections.forEach((section) => {
   });
 });
 
-/* ---------- Toolbar: tools, theme, help ---------- */
-
-const toolPointer = document.getElementById('tool-pointer');
-const toolHand = document.getElementById('tool-hand');
-
-function setActiveTool(tool) {
-  toolPointer.classList.toggle('is-active', tool === 'pointer');
-  toolHand.classList.toggle('is-active', tool === 'hand');
-  toolPointer.setAttribute('aria-pressed', String(tool === 'pointer'));
-  toolHand.setAttribute('aria-pressed', String(tool === 'hand'));
-}
-
-toolPointer.addEventListener('click', () => setActiveTool('pointer'));
-toolHand.addEventListener('click', () => setActiveTool('hand'));
+/* ---------- Toolbar: theme, help ---------- */
 
 const themeToggleBtn = document.getElementById('theme-toggle');
 const themeIcon = document.getElementById('theme-icon');
