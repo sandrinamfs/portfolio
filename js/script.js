@@ -151,6 +151,7 @@ Promise.race([mediaReady, mediaTimeout]).then(() => {
 /* ---------- Wheel: pan and cmd/ctrl+wheel zoom ---------- */
 
 viewport.addEventListener('wheel', (e) => {
+  if (isMobileLayout()) return;
   e.preventDefault();
 
   if (e.metaKey || e.ctrlKey) {
@@ -197,6 +198,13 @@ window.addEventListener('keyup', (e) => {
 let dragState = null;
 let selectedFrame = null;
 
+/* Below this width the canvas becomes a plain stacked page (see the mobile
+   media query in style.css) — dragging/panning/pinching no longer apply,
+   so the pointer handlers below bail out and native scroll takes over. */
+function isMobileLayout() {
+  return window.innerWidth < 640;
+}
+
 const activePointers = new Map();
 let pinchState = null;
 
@@ -229,6 +237,7 @@ function selectFrame(frame) {
 
 viewport.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
+  if (isMobileLayout()) return;
 
   activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -346,6 +355,13 @@ function endDrag(e) {
 
 viewport.addEventListener('pointerup', endDrag);
 viewport.addEventListener('pointercancel', endDrag);
+
+/* On mobile there's no drag to distinguish from a tap, so selection is just
+   a plain click — this still lets a link inside a frame navigate normally. */
+viewport.addEventListener('click', (e) => {
+  if (!isMobileLayout()) return;
+  selectFrame(e.target.closest('.frame'));
+});
 
 /* ---------- Collaborator-style cursor tag ----------
    Mimics another person's cursor appearing on the canvas: it shows up at a

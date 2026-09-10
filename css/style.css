@@ -240,7 +240,7 @@ a {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
-  min-width: 170px;
+  min-width: 140px;
   padding: 6px;
   border-radius: 10px;
   background: var(--toolbar-bg);
@@ -259,8 +259,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 6px 8px;
+  gap: 8px;
+  padding: 6px;
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -672,5 +672,64 @@ iframe.section-bg-img {
 @media (prefers-reduced-motion: reduce) {
   .section-bg-img {
     transition: none;
+  }
+}
+
+/* On mobile the Figma-canvas metaphor (absolute-positioned frames you pan
+   around) gives way to a plain stacked page, since there's no room to pan
+   sideways to read oversized zoomed-out text. Position/transform need
+   !important because script.js still writes them inline for the desktop
+   canvas math. */
+@media (max-width: 639px) {
+  /* Text no longer needs to counteract a zoomed-out canvas scale now that
+     mobile is a normal full-width flow, not a shrunk Figma canvas. */
+  :root {
+    --text-scale: 1;
+  }
+
+  html, body {
+    height: auto;
+    overflow: visible;
+  }
+
+  .canvas-viewport {
+    position: static;
+    overflow: visible;
+    touch-action: auto;
+  }
+
+  .canvas-grid {
+    z-index: -1;
+  }
+
+  .canvas {
+    position: static !important;
+    transform: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 24px;
+    gap: 48px;
+  }
+
+  .frame {
+    position: static !important;
+    cursor: default;
+  }
+
+  .frame-intro,
+  .intro-content,
+  .frame-media,
+  .media-frame,
+  .frame-about-info,
+  .frame-about-experience {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .media-caption {
+    white-space: normal;
+    flex-wrap: wrap;
   }
 }
