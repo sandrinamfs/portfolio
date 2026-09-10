@@ -568,7 +568,7 @@ iframe.section-bg-img {
 .about-title {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: calc(56px * var(--text-scale));
+  font-size: calc(48px * var(--text-scale));
   margin-bottom: calc(24px * var(--text-scale));
   color: var(--text-primary);
 }
@@ -675,41 +675,23 @@ iframe.section-bg-img {
   }
 }
 
-/* On mobile the Figma-canvas metaphor (absolute-positioned frames you pan
-   around) gives way to a plain stacked page, since there's no room to pan
-   sideways to read oversized zoomed-out text. Position/transform need
-   !important because script.js still writes them inline for the desktop
-   canvas math. */
+/* On mobile the frames stack into one full-width readable column instead of
+   the free-form Figma layout, but the canvas is still panned/zoomed exactly
+   like desktop (see isMobileLayout() in script.js) — only dragging a frame
+   to reposition it is disabled there. */
 @media (max-width: 639px) {
   /* Text no longer needs to counteract a zoomed-out canvas scale now that
-     mobile is a normal full-width flow, not a shrunk Figma canvas. */
+     mobile resets to a 1:1 view (see resetView() in script.js). */
   :root {
     --text-scale: 1;
   }
 
-  html, body {
-    height: auto;
-    overflow: visible;
-  }
-
-  .canvas-viewport {
-    position: static;
-    overflow: visible;
-    touch-action: auto;
-  }
-
-  .canvas-grid {
-    z-index: -1;
-  }
-
   .canvas {
-    position: static !important;
-    transform: none !important;
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    padding: 24px;
+    padding: 200px 24px;
     gap: 48px;
   }
 

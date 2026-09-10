@@ -31,6 +31,13 @@ let topZ = 1;
 const PAN_MARGIN = 120;
 
 function getContentBounds() {
+  // On mobile the frames are stacked in normal flow (not individually
+  // positioned via style.left/top), so the canvas's own box — sized to fit
+  // that stack — is the real content extent.
+  if (isMobileLayout()) {
+    return { minX: 0, minY: 0, maxX: canvas.offsetWidth, maxY: canvas.offsetHeight };
+  }
+
   return frames.reduce(
     (acc, frame) => {
       const left = parseFloat(frame.style.left) || 0;
@@ -109,6 +116,17 @@ function defaultScaleForViewport() {
 }
 
 function resetView() {
+  // Mobile frames are already full-width and stacked, so the canvas needs no
+  // shrinking or centering — its own padding provides the margins, and a
+  // flush 1:1 view is what "100%" should mean there.
+  if (isMobileLayout()) {
+    view.scale = 1;
+    view.x = 0;
+    view.y = 0;
+    applyTransform();
+    return;
+  }
+
   const vw = window.innerWidth;
   const frameWidth = document.querySelector('.frame-media').offsetWidth;
 
@@ -151,7 +169,6 @@ Promise.race([mediaReady, mediaTimeout]).then(() => {
 /* ---------- Wheel: pan and cmd/ctrl+wheel zoom ---------- */
 
 viewport.addEventListener('wheel', (e) => {
-  if (isMobileLayout()) return;
   e.preventDefault();
 
   if (e.metaKey || e.ctrlKey) {
@@ -198,9 +215,9 @@ window.addEventListener('keyup', (e) => {
 let dragState = null;
 let selectedFrame = null;
 
-/* Below this width the canvas becomes a plain stacked page (see the mobile
-   media query in style.css) — dragging/panning/pinching no longer apply,
-   so the pointer handlers below bail out and native scroll takes over. */
+/* Below this width the frames stack into one full-width column (see the
+   mobile media query in style.css) instead of the free-form desktop layout —
+   panning and pinch-zoom still work the same, only frame-dragging doesn't. */
 function isMobileLayout() {
   return window.innerWidth < 640;
 }
@@ -237,7 +254,6 @@ function selectFrame(frame) {
 
 viewport.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
-  if (isMobileLayout()) return;
 
   activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -312,11 +328,16 @@ viewport.addEventListener('pointermove', (e) => {
   const dx = e.clientX - dragState.startClientX;
   const dy = e.clientY - dragState.startClientY;
 
+  // Dragging a frame to reposition it is a desktop-only interaction — on
+  // mobile the same gesture just pans the canvas instead, same as dragging
+  // empty space.
+  const movesFrame = dragState.mode === 'frame' && !isMobileLayout();
+
   if (!dragState.moved && Math.hypot(dx, dy) > 4) {
     dragState.moved = true;
     viewport.setPointerCapture(e.pointerId);
     document.body.classList.add('is-dragging');
-    if (dragState.mode === 'frame') {
+    if (movesFrame) {
       dragState.frame.style.zIndex = ++topZ;
       dragState.frame.classList.add('dragging');
     } else {
@@ -326,7 +347,7 @@ viewport.addEventListener('pointermove', (e) => {
 
   if (!dragState.moved) return;
 
-  if (dragState.mode === 'frame') {
+  if (movesFrame) {
     dragState.frame.style.left = `${dragState.originLeft + dx / view.scale}px`;
     dragState.frame.style.top = `${dragState.originTop + dy / view.scale}px`;
   } else {
@@ -355,13 +376,6 @@ function endDrag(e) {
 
 viewport.addEventListener('pointerup', endDrag);
 viewport.addEventListener('pointercancel', endDrag);
-
-/* On mobile there's no drag to distinguish from a tap, so selection is just
-   a plain click — this still lets a link inside a frame navigate normally. */
-viewport.addEventListener('click', (e) => {
-  if (!isMobileLayout()) return;
-  selectFrame(e.target.closest('.frame'));
-});
 
 /* ---------- Collaborator-style cursor tag ----------
    Mimics another person's cursor appearing on the canvas: it shows up at a
@@ -395,16 +409,27 @@ function randomPointInView(frame) {
   const t = 0.1 + Math.random() * 0.8;
   const edge = Math.floor(Math.random() * 4);
 
+  let point;
   switch (edge) {
     case 0: // top
-      return { x: left + width * t, y: top - outset + Math.random() * outset };
+      point = { x: left + width * t, y: top - outset + Math.random() * outset };
+      break;
     case 1: // right
-      return { x: right - outset + Math.random() * outset, y: top + height * t };
+      point = { x: right - outset + Math.random() * outset, y: top + height * t };
+      break;
     case 2: // bottom
-      return { x: left + width * t, y: bottom - outset + Math.random() * outset };
+      point = { x: left + width * t, y: bottom - outset + Math.random() * outset };
+      break;
     default: // left
-      return { x: left - outset + Math.random() * outset, y: top + height * t };
+      point = { x: left - outset + Math.random() * outset, y: top + height * t };
   }
+
+  // The speech bubble grows to the right of this anchor (up to its
+  // max-width), not centered on it — keep the anchor far enough from the
+  // right edge that the bubble never gets clipped by the viewport.
+  const BUBBLE_SAFE_MARGIN = 380;
+  point.x = Math.min(point.x, window.innerWidth - BUBBLE_SAFE_MARGIN);
+  return point;
 }
 
 function moveTagTo(frame) {
