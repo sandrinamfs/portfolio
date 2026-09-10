@@ -26,10 +26,47 @@ const GRID_SIZE = 32;
 const view = { x: 0, y: 0, scale: 1 };
 let topZ = 1;
 
+/* Keeps the canvas from being panned into an empty void — at least a strip
+   of content stays visible on every edge no matter how far you pan. */
+const PAN_MARGIN = 120;
+
+function getContentBounds() {
+  return frames.reduce(
+    (acc, frame) => {
+      const left = parseFloat(frame.style.left) || 0;
+      const top = parseFloat(frame.style.top) || 0;
+      return {
+        minX: Math.min(acc.minX, left),
+        minY: Math.min(acc.minY, top),
+        maxX: Math.max(acc.maxX, left + frame.offsetWidth),
+        maxY: Math.max(acc.maxY, top + frame.offsetHeight),
+      };
+    },
+    { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+  );
+}
+
+function clampPan() {
+  const bounds = getContentBounds();
+  if (!isFinite(bounds.minX)) return;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const contentLeft = view.x + bounds.minX * view.scale;
+  const contentRight = view.x + bounds.maxX * view.scale;
+  const contentTop = view.y + bounds.minY * view.scale;
+  const contentBottom = view.y + bounds.maxY * view.scale;
+
+  if (contentRight < PAN_MARGIN) view.x += PAN_MARGIN - contentRight;
+  if (contentLeft > vw - PAN_MARGIN) view.x -= contentLeft - (vw - PAN_MARGIN);
+  if (contentBottom < PAN_MARGIN) view.y += PAN_MARGIN - contentBottom;
+  if (contentTop > vh - PAN_MARGIN) view.y -= contentTop - (vh - PAN_MARGIN);
+}
+
 function applyTransform() {
+  clampPan();
   canvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
-  canvasGrid.style.backgroundPosition = `${view.x}px ${view.y}px`;
-  canvasGrid.style.backgroundSize = `${GRID_SIZE * view.scale}px ${GRID_SIZE * view.scale}px`;
   zoomIndicator.textContent = `${Math.round(view.scale * 100)}%`;
 }
 
@@ -46,8 +83,6 @@ function layoutFrames() {
   const stack = [
     document.querySelector('.frame-intro'),
     ...document.querySelectorAll('.frame-media'),
-    document.querySelector('.frame-about-info'),
-    document.querySelector('.frame-about-experience'),
   ];
 
   let y = GAP;
@@ -56,6 +91,13 @@ function layoutFrames() {
     frame.style.top = `${y}px`;
     y += frame.offsetHeight + GAP;
   });
+
+  const aboutInfo = document.querySelector('.frame-about-info');
+  const aboutExperience = document.querySelector('.frame-about-experience');
+  aboutInfo.style.left = '0px';
+  aboutInfo.style.top = `${y}px`;
+  aboutExperience.style.left = `${aboutInfo.offsetWidth + GAP}px`;
+  aboutExperience.style.top = `${y}px`;
 }
 
 function defaultScaleForViewport() {
@@ -100,6 +142,7 @@ Promise.race([mediaReady, mediaTimeout]).then(() => {
   layoutFrames();
   resetView();
   requestAnimationFrame(() => {
+    document.body.classList.add('ready');
     document.querySelectorAll('.section-bg-img').forEach((el) => el.classList.add('in-view'));
   });
 });
@@ -328,10 +371,22 @@ function randomPointInView(frame) {
   const width = Math.max(right - left, 0);
   const height = Math.max(bottom - top, 0);
 
-  return {
-    x: left + width * (0.15 + Math.random() * 0.5),
-    y: top + height * (0.15 + Math.random() * 0.5),
-  };
+  // Bias toward one of the four edges (with a bit of outward drift) instead
+  // of the center, so the tag doesn't sit on top of the media itself.
+  const outset = 16;
+  const t = 0.1 + Math.random() * 0.8;
+  const edge = Math.floor(Math.random() * 4);
+
+  switch (edge) {
+    case 0: // top
+      return { x: left + width * t, y: top - outset + Math.random() * outset };
+    case 1: // right
+      return { x: right - outset + Math.random() * outset, y: top + height * t };
+    case 2: // bottom
+      return { x: left + width * t, y: bottom - outset + Math.random() * outset };
+    default: // left
+      return { x: left - outset + Math.random() * outset, y: top + height * t };
+  }
 }
 
 function moveTagTo(frame) {
