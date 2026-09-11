@@ -30,6 +30,11 @@
      defaultScaleForViewport in script.js) so text renders at the same
      on-screen size as the 100% desktop view, instead of shrinking with it. */
   --text-scale: 1;
+
+  /* Kept in sync with the canvas's own zoom (view.scale) by applyTransform()
+     in script.js, so annotation elements (captions, size badges) can counter
+     -scale themselves and stay a constant on-screen size regardless of zoom. */
+  --zoom-scale: 1;
 }
 
 [data-theme="light"] {
@@ -155,7 +160,7 @@ a {
 
 .toolbar {
   position: fixed;
-  top: 20px;
+  top: 40px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 950;
@@ -166,7 +171,7 @@ a {
   border-radius: 14px;
   background: var(--toolbar-bg);
   border: 1px solid var(--toolbar-border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.125);
   backdrop-filter: blur(8px);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -286,38 +291,18 @@ a {
   background: var(--toolbar-divider);
 }
 
-.help-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  min-width: 170px;
-  padding: 6px;
-  border-radius: 10px;
-  background: var(--toolbar-bg);
-  border: 1px solid var(--toolbar-border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.help-menu[hidden] {
-  display: none;
-}
-
-.help-menu-item {
-  padding: 6px 8px;
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 13px;
-  white-space: nowrap;
-}
-
 /* ---------- Intro frame ---------- */
 
+/* Explicit width, not shrink-to-fit — .canvas has zero intrinsic width
+   (every .frame child is absolutely positioned), so a frame relying on
+   shrink-to-fit sizing against it gets miscomputed narrower than its
+   content actually needs. */
+.frame-picture {
+  width: calc(76px * var(--text-scale));
+}
+
 .frame-intro {
-  width: 900px;
+  width: 827px;
   text-align: left;
 }
 
@@ -327,7 +312,7 @@ a {
   flex-direction: column;
   align-items: flex-start;
   gap: calc(40px * var(--text-scale));
-  max-width: 900px;
+  max-width: 827px;
 }
 
 .profile-pic {
@@ -335,12 +320,14 @@ a {
   height: calc(76px * var(--text-scale));
   border-radius: 50%;
   object-fit: cover;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .intro-title {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: calc(48px * var(--text-scale));
+  font-size: 60px;
   line-height: 1.15;
   color: var(--text-primary);
 }
@@ -348,7 +335,7 @@ a {
 .intro-subtitle {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: calc(48px * var(--text-scale));
+  font-size: 60px;
   line-height: 1.1;
   color: var(--text-primary-soft);
 }
@@ -368,9 +355,17 @@ a {
 
 /* ---------- Media frames ---------- */
 
+/* Explicit width, not shrink-to-fit — a shrink-to-fit .frame with a
+   width:100% child (the caption) treats that percentage as auto during
+   sizing, so the caption renders at its own natural content width instead
+   of clamping to the frame and never actually triggers its ellipsis. */
+.frame-media {
+  width: 800px;
+}
+
 .media-frame {
   position: relative;
-  width: 1260px;
+  width: 800px;
 }
 
 .section-bg-img {
@@ -396,14 +391,25 @@ iframe.section-bg-img {
   transform: scale(1);
 }
 
-.media-caption {
-  display: flex;
-  align-items: center;
-  gap: calc(6px * var(--text-scale));
-  margin-bottom: calc(10px * var(--text-scale));
+.media-caption,
+.frame-caption {
+  display: block;
+  /* Matches the frame's own width and truncates with an ellipsis instead of
+     overflowing or wrapping — a single-line block is what lets text-overflow
+     work here, so the pieces below (link, dots, spans) are plain inline
+     content rather than flex items. */
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Scaling font-size/margin directly (rather than a paint-only
+     transform: scale()) keeps them a constant on-screen size as the canvas
+     zooms out AND grows their real layout footprint to match — a transform
+     wouldn't reserve the extra space, letting the frame below creep up and
+     overlap the now visually-larger caption. */
+  margin-bottom: calc(10px * var(--text-scale) / var(--zoom-scale));
   color: var(--text-faint);
   font-family: var(--font-body);
-  font-size: calc(13px * var(--text-scale));
+  font-size: calc(13px * var(--text-scale) / var(--zoom-scale));
   font-weight: 500;
   white-space: nowrap;
   transition: color 0.15s ease;
@@ -414,17 +420,38 @@ iframe.section-bg-img {
   font-weight: 600;
 }
 
-.frame:has(.media-frame:hover) .media-caption {
+.frame:has(.frame-object:hover) .media-caption,
+.frame:has(.frame-object:hover) .frame-caption {
   color: #0d99ff;
 }
 
-.frame.selected .media-frame,
-.frame.dragging .media-frame {
+.frame.selected .media-caption,
+.frame.selected .frame-caption,
+.frame.dragging .media-caption,
+.frame.dragging .frame-caption {
+  color: #0d99ff;
+}
+
+/* The outer .frame is what gets selected/dragged, but the outline, resize
+   handles, and size badge visually belong to the .frame-object inside it
+   (the caption above sits outside that box, same as a video's caption). */
+.frame-object {
+  position: relative;
+  margin-bottom: calc(32px * var(--text-scale));
+}
+
+.frame.selected .frame-object,
+.frame.dragging .frame-object {
   outline-color: #0d99ff;
 }
 
-.frame.selected .media-frame .handle,
-.frame.dragging .media-frame .handle {
+.frame.selected .frame-object .handle,
+.frame.dragging .frame-object .handle {
+  opacity: 1;
+}
+
+.frame.selected .frame-object .size-badge,
+.frame.dragging .frame-object .size-badge {
   opacity: 1;
 }
 
@@ -467,6 +494,70 @@ iframe.section-bg-img {
 .handle-bl { bottom: -4px; left: -4px; }
 .handle-bm { bottom: -4px; left: 50%; transform: translateX(-50%); }
 .handle-br { bottom: -4px; right: -4px; }
+
+.size-badge {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: calc(8px / var(--zoom-scale));
+  padding: calc(3px / var(--zoom-scale)) calc(8px / var(--zoom-scale));
+  border-radius: calc(4px / var(--zoom-scale));
+  background: #0d99ff;
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: calc(11px / var(--zoom-scale));
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ---------- Rulers ---------- */
+
+.ruler {
+  position: fixed;
+  background: var(--toolbar-bg);
+  transition: background-color 0.2s ease;
+}
+
+.ruler-h {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  z-index: 900;
+}
+
+.ruler-v {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 24px;
+  z-index: 901;
+}
+
+.ruler-corner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  background: var(--toolbar-bg);
+  border-right: 1px solid var(--toolbar-border);
+  border-bottom: 1px solid var(--toolbar-border);
+  z-index: 902;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+@media (max-width: 639px) {
+  .ruler,
+  .ruler-corner {
+    display: none;
+  }
+}
 
 /* ---------- Custom cursor tag ---------- */
 
@@ -557,12 +648,17 @@ iframe.section-bg-img {
 
 /* ---------- About frames ---------- */
 
-.frame-about-info {
-  width: 420px;
+.frame-about-info,
+.frame-about-experience {
+  width: 440px;
 }
 
-.frame-about-experience {
-  width: 780px;
+.frame-socials {
+  width: 440px;
+}
+
+.frame-credits {
+  width: 240px;
 }
 
 .about-title {
@@ -589,6 +685,31 @@ iframe.section-bg-img {
   margin-bottom: calc(32px * var(--text-scale));
 }
 
+/* ---------- Credits: Figma sticky-note look ---------- */
+
+.sticky-note {
+  width: 240px;
+  height: 240px;
+  background: #f5dc9a;
+  padding: calc(18px * var(--text-scale));
+  border-radius: 4px;
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.175), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-text {
+  font-family: var(--font-body);
+  font-size: calc(14px * var(--text-scale));
+  line-height: 1.45;
+  color: #2b2416;
+  margin-bottom: calc(14px * var(--text-scale));
+}
+
+.sticky-meta {
+  font-family: var(--font-body);
+  font-size: calc(12px * var(--text-scale));
+  color: rgba(43, 36, 22, 0.6);
+}
+
 .social-icons {
   display: flex;
   align-items: center;
@@ -600,8 +721,12 @@ iframe.section-bg-img {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: calc(24px * var(--text-scale));
-  height: calc(24px * var(--text-scale));
+  /* 4px of extra clickable area on every side — the negative margin cancels
+     it back out so the icon's own visual size and spacing don't change. */
+  width: calc(24px * var(--text-scale) + 8px);
+  height: calc(24px * var(--text-scale) + 8px);
+  padding: 4px;
+  margin: -4px;
 }
 
 .social-link img {
@@ -690,8 +815,9 @@ iframe.section-bg-img {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
-    padding: 200px 24px;
+    /* The 24px top/left margin comes from view.x/y in resetView() (script.js)
+       — shrinking the width by double that keeps a matching gap on the right. */
+    width: calc(100% - 48px);
     gap: 48px;
   }
 
@@ -705,13 +831,15 @@ iframe.section-bg-img {
   .frame-media,
   .media-frame,
   .frame-about-info,
-  .frame-about-experience {
+  .frame-about-experience,
+  .frame-socials,
+  .frame-credits {
     width: 100% !important;
     max-width: 100%;
   }
 
-  .media-caption {
-    white-space: normal;
-    flex-wrap: wrap;
+  .intro-title,
+  .intro-subtitle {
+    font-size: 32px;
   }
 }

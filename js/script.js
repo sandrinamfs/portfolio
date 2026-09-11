@@ -8,7 +8,21 @@ document.querySelectorAll('.hover-select').forEach((el) => {
     handle.className = `handle handle-${pos}`;
     el.appendChild(handle);
   });
+
+  const badge = document.createElement('span');
+  badge.className = 'size-badge';
+  el.appendChild(badge);
 });
+
+/* Shows each selectable box's real authored size (unaffected by canvas zoom,
+   since offsetWidth/Height are measured before the canvas's own transform is
+   applied) — same idea as Figma's dimension label on a selected frame. */
+function updateSizeBadges() {
+  document.querySelectorAll('.hover-select').forEach((el) => {
+    const badge = el.querySelector(':scope > .size-badge');
+    if (badge) badge.textContent = `${Math.round(el.offsetWidth)} × ${Math.round(el.offsetHeight)}`;
+  });
+}
 
 /* ---------- Canvas state ---------- */
 
@@ -75,7 +89,9 @@ function applyTransform() {
   clampPan();
   canvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
   zoomIndicator.textContent = `${Math.round(view.scale * 100)}%`;
+  document.documentElement.style.setProperty('--zoom-scale', view.scale);
   updateCursorScreenPos();
+  drawRulers();
 }
 
 function zoomAt(clientX, clientY, nextScale) {
@@ -87,25 +103,135 @@ function zoomAt(clientX, clientY, nextScale) {
   applyTransform();
 }
 
+/* ---------- Rulers ---------- */
+
+const rulerH = document.getElementById('ruler-h');
+const rulerV = document.getElementById('ruler-v');
+const RULER_SIZE = 24;
+
+// Picks a "nice" spacing (1/2/5 × a power of ten) for the labeled ticks,
+// same idea Figma/design tools use so labels never crowd at any zoom level.
+function niceStep(rawStep) {
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalized = rawStep / magnitude;
+  let step;
+  if (normalized < 2) step = 1;
+  else if (normalized < 5) step = 2;
+  else step = 5;
+  return step * magnitude;
+}
+
+function drawRulerAxis(ctx, canvasEl, isHorizontal, viewOffset, length, tickColor, textColor, fontFamily) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = isHorizontal ? length : RULER_SIZE;
+  const h = isHorizontal ? RULER_SIZE : length;
+
+  if (canvasEl.width !== Math.round(w * dpr) || canvasEl.height !== Math.round(h * dpr)) {
+    canvasEl.width = Math.round(w * dpr);
+    canvasEl.height = Math.round(h * dpr);
+    canvasEl.style.width = `${w}px`;
+    canvasEl.style.height = `${h}px`;
+  }
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = `10px ${fontFamily}`;
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = textColor;
+  ctx.strokeStyle = tickColor;
+  ctx.lineWidth = 1;
+
+  // Aim for roughly 80 screen px between labeled ticks, in canvas units.
+  const step = niceStep(80 / view.scale);
+  const minorStep = step / 5;
+
+  const canvasStart = (0 - viewOffset) / view.scale;
+  const canvasEnd = (length - viewOffset) / view.scale;
+  const startTick = Math.floor(canvasStart / minorStep) * minorStep;
+
+  for (let v = startTick; v <= canvasEnd; v += minorStep) {
+    const screenPos = v * view.scale + viewOffset;
+    const isMajor = Math.abs(Math.round(v / step) * step - v) < minorStep / 2;
+
+    ctx.beginPath();
+    if (isHorizontal) {
+      ctx.moveTo(screenPos + 0.5, isMajor ? 10 : 16);
+      ctx.lineTo(screenPos + 0.5, RULER_SIZE);
+    } else {
+      ctx.moveTo(isMajor ? 10 : 16, screenPos + 0.5);
+      ctx.lineTo(RULER_SIZE, screenPos + 0.5);
+    }
+    ctx.stroke();
+
+    if (isMajor) {
+      const label = String(Math.round(v));
+      if (isHorizontal) {
+        ctx.fillText(label, screenPos + 3, 4);
+      } else {
+        ctx.save();
+        ctx.translate(9, screenPos + 3);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+      }
+    }
+  }
+}
+
+function drawRulers() {
+  if (isMobileLayout()) return;
+
+  const rootStyle = getComputedStyle(document.documentElement);
+  const tickColor = rootStyle.getPropertyValue('--toolbar-divider').trim();
+  const textColor = rootStyle.getPropertyValue('--text-faint').trim();
+  const fontFamily = getComputedStyle(document.body).fontFamily;
+
+  drawRulerAxis(rulerH.getContext('2d'), rulerH, true, view.x, window.innerWidth, tickColor, textColor, fontFamily);
+  drawRulerAxis(rulerV.getContext('2d'), rulerV, false, view.y, window.innerHeight, tickColor, textColor, fontFamily);
+}
+
+window.addEventListener('resize', drawRulers);
+
 function layoutFrames() {
-  const stack = [
-    document.querySelector('.frame-intro'),
-    ...document.querySelectorAll('.frame-media'),
-  ];
+  const PICTURE_GAP = 24;
+  const picture = document.querySelector('.frame-picture');
+  picture.style.left = '0px';
+  picture.style.top = `${GAP}px`;
 
-  let y = GAP;
-  stack.forEach((frame) => {
-    frame.style.left = '0px';
+  const intro = document.querySelector('.frame-intro');
+  intro.style.left = '0px';
+  intro.style.top = `${GAP + picture.offsetHeight + PICTURE_GAP}px`;
+  let y = GAP + picture.offsetHeight + PICTURE_GAP + intro.offsetHeight + GAP;
+
+  // Video frames sit in one horizontal row instead of stacking vertically.
+  const mediaFrames = [...document.querySelectorAll('.frame-media')];
+  let x = 0;
+  let mediaRowHeight = 0;
+  mediaFrames.forEach((frame) => {
+    frame.style.left = `${x}px`;
     frame.style.top = `${y}px`;
-    y += frame.offsetHeight + GAP;
+    x += frame.offsetWidth + GAP;
+    mediaRowHeight = Math.max(mediaRowHeight, frame.offsetHeight);
   });
+  y += mediaRowHeight + GAP;
 
+  // About Me, Experience and Credits form one row; Socials sits below About Me.
   const aboutInfo = document.querySelector('.frame-about-info');
   const aboutExperience = document.querySelector('.frame-about-experience');
+  const credits = document.querySelector('.frame-credits');
+  const socials = document.querySelector('.frame-socials');
+
   aboutInfo.style.left = '0px';
   aboutInfo.style.top = `${y}px`;
+
   aboutExperience.style.left = `${aboutInfo.offsetWidth + GAP}px`;
   aboutExperience.style.top = `${y}px`;
+
+  credits.style.left = `${aboutInfo.offsetWidth + GAP + aboutExperience.offsetWidth + GAP}px`;
+  credits.style.top = `${y}px`;
+
+  socials.style.left = '0px';
+  socials.style.top = `${y + aboutInfo.offsetHeight + GAP}px`;
 }
 
 function defaultScaleForViewport() {
@@ -116,23 +242,13 @@ function defaultScaleForViewport() {
 }
 
 function resetView() {
-  // Mobile frames are already full-width and stacked, so the canvas needs no
-  // shrinking or centering — its own padding provides the margins, and a
-  // flush 1:1 view is what "100%" should mean there.
-  if (isMobileLayout()) {
-    view.scale = 1;
-    view.x = 0;
-    view.y = 0;
-    applyTransform();
-    return;
-  }
+  // Mobile frames are already full-width and stacked (no zoom shrink needed);
+  // the canvas is still anchored from the top-left with a fixed margin below.
+  view.scale = isMobileLayout() ? 1 : defaultScaleForViewport();
 
-  const vw = window.innerWidth;
-  const frameWidth = document.querySelector('.frame-media').offsetWidth;
-
-  view.scale = defaultScaleForViewport();
-  view.x = (vw - frameWidth * view.scale) / 2;
-  view.y = 24;
+  // Anchored from the top-left corner with a fixed margin — not centered.
+  view.x = isMobileLayout() ? 24 : 140;
+  view.y = 40;
   applyTransform();
 }
 
@@ -160,6 +276,7 @@ const mediaTimeout = new Promise((resolve) => setTimeout(resolve, 3000));
 Promise.race([mediaReady, mediaTimeout]).then(() => {
   layoutFrames();
   resetView();
+  updateSizeBadges();
   requestAnimationFrame(() => {
     document.body.classList.add('ready');
     document.querySelectorAll('.section-bg-img').forEach((el) => el.classList.add('in-view'));
@@ -395,7 +512,10 @@ let wanderTimer = null;
 let cursorCanvasPos = null;
 
 function randomPointInView(frame) {
-  const rect = frame.getBoundingClientRect();
+  // For video sections, confine the tag to the actual video box — the
+  // passed-in frame also includes the caption row above it.
+  const targetEl = frame.querySelector('.media-frame') || frame;
+  const rect = targetEl.getBoundingClientRect();
   const left = Math.max(rect.left, 0);
   const top = Math.max(rect.top, 0);
   const right = Math.min(rect.right, window.innerWidth);
@@ -403,25 +523,17 @@ function randomPointInView(frame) {
   const width = Math.max(right - left, 0);
   const height = Math.max(bottom - top, 0);
 
-  // Bias toward one of the four edges (with a bit of outward drift) instead
-  // of the center, so the tag doesn't sit on top of the media itself.
-  const outset = 16;
+  // Random along the bottom or left edge only, staying inset from the edge
+  // rather than drifting outside the frame.
+  const inset = 16;
   const t = 0.1 + Math.random() * 0.8;
-  const edge = Math.floor(Math.random() * 4);
+  const roll = Math.random();
 
   let point;
-  switch (edge) {
-    case 0: // top
-      point = { x: left + width * t, y: top - outset + Math.random() * outset };
-      break;
-    case 1: // right
-      point = { x: right - outset + Math.random() * outset, y: top + height * t };
-      break;
-    case 2: // bottom
-      point = { x: left + width * t, y: bottom - outset + Math.random() * outset };
-      break;
-    default: // left
-      point = { x: left - outset + Math.random() * outset, y: top + height * t };
+  if (roll < 0.5) { // bottom
+    point = { x: left + width * t, y: bottom - inset };
+  } else { // left
+    point = { x: left + inset, y: top + height * t };
   }
 
   // The speech bubble grows to the right of this anchor (up to its
@@ -529,24 +641,45 @@ themeToggleBtn.addEventListener('click', () => {
   applyTheme(current === 'light' ? 'dark' : 'light');
 });
 
-const helpBtn = document.getElementById('help-btn');
-const helpPopover = document.getElementById('help-popover');
+// Fits every frame into the viewport at once, same idea as Figma's
+// "zoom to fit" — scales and pans so the full content bounds are visible.
+function zoomToFit() {
+  const bounds = getContentBounds();
+  if (!isFinite(bounds.minX)) return;
 
-function toggleHelp(show) {
-  helpPopover.toggleAttribute('hidden', !show);
-  helpBtn.setAttribute('aria-expanded', String(show));
+  const margin = 80;
+  const contentWidth = bounds.maxX - bounds.minX;
+  const contentHeight = bounds.maxY - bounds.minY;
+  const availableWidth = window.innerWidth - margin * 2;
+  const availableHeight = window.innerHeight - margin * 2;
+
+  const scale = Math.min(
+    MAX_SCALE,
+    Math.max(MIN_SCALE, Math.min(availableWidth / contentWidth, availableHeight / contentHeight))
+  );
+
+  view.scale = scale;
+  view.x = margin - bounds.minX * scale + (availableWidth - contentWidth * scale) / 2;
+  view.y = margin - bounds.minY * scale + (availableHeight - contentHeight * scale) / 2;
+  applyTransform();
 }
 
-helpBtn.addEventListener('click', (e) => {
+const zoomFitBtn = document.getElementById('zoom-fit-btn');
+let isFitted = false;
+
+zoomFitBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   toggleZoomMenu(false);
-  toggleHelp(helpPopover.hasAttribute('hidden'));
-});
 
-document.addEventListener('click', (e) => {
-  if (!helpPopover.hasAttribute('hidden') && !helpPopover.contains(e.target) && e.target !== helpBtn) {
-    toggleHelp(false);
+  if (isFitted) {
+    resetView();
+  } else {
+    zoomToFit();
   }
+  isFitted = !isFitted;
+
+  zoomFitBtn.setAttribute('aria-label', isFitted ? 'Zoom to 100%' : 'Zoom to fit');
+  zoomFitBtn.title = isFitted ? 'Zoom to 100%' : 'Zoom to fit all elements';
 });
 
 const zoomControl = document.getElementById('zoom-control');
@@ -559,7 +692,6 @@ function toggleZoomMenu(show) {
 
 zoomControl.addEventListener('click', (e) => {
   e.stopPropagation();
-  toggleHelp(false);
   toggleZoomMenu(zoomMenu.hasAttribute('hidden'));
 });
 

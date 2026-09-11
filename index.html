@@ -26,12 +26,22 @@
   <div class="canvas-grid" id="canvas-grid"></div>
   <div class="canvas" id="canvas">
 
-    <div class="frame frame-intro hover-select"
+    <div class="frame frame-picture"
+    data-cursor-text="Try dragging me around"
+    data-cursor-color="#ffffff"
+    data-cursor-text-color="#0a0a0a">
+    <div class="frame-caption">Profile Pic</div>
+    <div class="intro-content hover-select frame-object">
+      <img class="profile-pic" src="assets/images/profile.png" alt="Portrait of Sandrina" draggable="false">
+    </div>
+  </div>
+
+    <div class="frame frame-intro"
       data-cursor-text="Try dragging me around"
       data-cursor-color="#ffffff"
       data-cursor-text-color="#0a0a0a">
-      <div class="intro-content hover-select">
-        <img class="profile-pic" src="assets/images/profile.png" alt="Portrait of Sandrina">
+      <div class="frame-caption">Intro</div>
+      <div class="intro-content hover-select frame-object">
         <h1 class="intro-title">I'm Sandrina.</h1>
         <p class="intro-subtitle">Product Designer with 10+ years of experience designing for <a href="https://buildship.com" target="_blank" rel="noopener noreferrer" class="underline">BuildShip</a>, <a href="https://spline.design" target="_blank" rel="noopener noreferrer" class="underline">Spline</a> and <a href="https://rows.com" target="_blank" rel="noopener noreferrer" class="underline">Rows</a>.</p>
       </div>
@@ -47,9 +57,9 @@
         <span>•</span>
         <span>2023-Now</span>
       </div>
-      <div class="media-frame hover-select">
-        <iframe class="section-bg-img" src="https://www.youtube.com/embed/wceamGZhYmo?autoplay=1&mute=1&loop=1&playlist=wceamGZhYmo&controls=0&modestbranding=1&rel=0&playsinline=1?cc_load_policy=3" title="Rows product video" loading="lazy" frameborder="0" allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        <!--<video class="section-bg-img" src="assets/images/Video_1.mp4" autoplay loop muted playsinline disablePictureInPicture disableRemotePlayback></video> -->
+      <div class="media-frame hover-select frame-object">
+        <img class="section-bg-img" src="assets/images/BuildShip.png"></img>
+        <!-- <video class="section-bg-img" src="assets/images/buildship.mp4" autoplay loop muted playsinline disablePictureInPicture disableRemotePlayback></video>-->
       </div>
     </div>
 
@@ -63,9 +73,9 @@
         <span>•</span>
         <span>2022-2023</span>
       </div>
-      <div class="media-frame hover-select">
-        <iframe class="section-bg-img" src="https://www.youtube.com/embed/OcgtxjMY5Ms?autoplay=1&mute=1&loop=1&playlist=OcgtxjMY5Ms&controls=0&modestbranding=1&rel=0&playsinline=1?cc_load_policy=3" title="Rows product video" loading="lazy" frameborder="0" allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        <!-- <video class="section-bg-img" src="assets/images/Video_2.mp4" autoplay loop muted playsinline disablePictureInPicture disableRemotePlayback></video> -->
+      <div class="media-frame hover-select frame-object">
+        <img class="section-bg-img" src="assets/images/Spline.png"></img>
+        <!--<video class="section-bg-img" src="assets/images/spline.mp4" autoplay loop muted playsinline disablePictureInPicture disableRemotePlayback></video> -->
       </div>
     </div>
 
@@ -80,70 +90,94 @@
         <span>•</span>
         <span>2020-2022</span>
       </div>
-      <div class="media-frame hover-select">
-        <iframe class="section-bg-img" src="https://www.youtube.com/embed/fBTPRWD9F5c?autoplay=1&mute=1&loop=1&playlist=fBTPRWD9F5c&controls=0&modestbranding=1&rel=0&playsinline=1?cc_load_policy=3" title="Rows product video" loading="lazy" frameborder="0" allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="media-frame hover-select frame-object">
+        <img class="section-bg-img" src="assets/images/Rows.png"></img>
+        <!--<video class="section-bg-img" src="assets/images/rows.mp4" autoplay loop muted playsinline disablePictureInPicture disableRemotePlayback></video>-->
       </div>
     </div>
 
-    <div class="frame frame-about-info hover-select">
-      <h2 class="about-title">About Me</h2>
-      <p class="about-text">I'm a product designer who loves turning messy, half-formed ideas into something that just makes sense.</p>
-      <p class="about-text">I'm happiest building things from scratch: a founding designer at heart, a motion nerd, and the person who cares a little too much about the small stuff: the way things move, the spacing, the details most people won't notice but somehow always feel.</p>
-      <p class="about-text">I'm currently vibecoding my way through this website, which feels about right.</p>
-      <p class="about-meta">Last commit: 09/2026</p>
-      <div class="social-icons">
-        <a href="https://www.linkedin.com/in/afeeee/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn"><img src="assets/icons/linkedin.svg" alt=""></a>
-        <a href="https://x.com/_afeeee" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="X (Twitter)"><img src="assets/icons/x.svg" alt=""></a>
-        <a href="https://dribbble.com/afeeee" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Dribbble"><img src="assets/icons/dribbble.svg" alt=""></a>
-        <a href="https://unsplash.com/@afeeee" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Unsplash"><img src="assets/icons/unsplash.svg" alt=""></a>
-        <a href="https://github.com/sandrinamfs" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub"><img src="assets/icons/github.svg" alt=""></a>
-        <a href="mailto:sandrina.mfs@gmail.com" class="social-link" aria-label="Email"><img src="assets/icons/email.svg" alt=""></a>
+    <div class="frame frame-about-info">
+      <div class="frame-caption">About Me</div>
+      <div class="hover-select frame-object about-card">
+        <h2 class="about-title">About Me</h2>
+        <p class="about-text">I'm a product designer who loves turning messy, half-formed ideas into something that just makes sense.</p>
+        <p class="about-text">I'm happiest building things from scratch: a founding designer at heart, a motion nerd, and the person who cares a little too much about the small stuff: the way things move, the spacing, the details most people won't notice but somehow always feel.</p>
       </div>
     </div>
 
-    <div class="frame frame-about-experience hover-select">
-      <h2 class="about-title">Experience</h2>
-      <div class="experience-list">
-        <div class="job-entry">
-          <div class="job-header">
-            <img class="job-icon" src="assets/icons/icon-buildship.png" alt="">
-            <h3><a href="https://buildship.com" target="_blank" rel="noopener noreferrer" class="job-link">BuildShip</a> — Founding Product Designer</h3>
-          </div>
-          <p class="job-desc">Designing a low-code visual backend builder to build API's, backend tasks and scheduled jobs.</p>
-          <span class="job-date">2023 - Now</span>
+    <div class="frame frame-socials">
+      <div class="frame-caption">Socials</div>
+      <div class="hover-select frame-object">
+        <h2 class="about-title">Socials</h2>
+        <div class="social-icons">
+          <a href="mailto:sandrina.mfs@gmail.com" class="social-link" aria-label="Email"><img src="assets/icons/email.svg" alt=""></a>
+          <a href="https://www.linkedin.com/in/afeeee/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn"><img src="assets/icons/linkedin.svg" alt=""></a>
+          <a href="https://x.com/_afeeee" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="X (Twitter)"><img src="assets/icons/x.svg" alt=""></a>
+          <a href="https://dribbble.com/afeeee" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Dribbble"><img src="assets/icons/dribbble.svg" alt=""></a>
+          <a href="https://unsplash.com/@afeeee" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Unsplash"><img src="assets/icons/unsplash.svg" alt=""></a>
+          <a href="https://github.com/sandrinamfs" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub"><img src="assets/icons/github.svg" alt=""></a>
         </div>
+      </div>
+    </div>
 
-        <div class="job-entry">
-          <div class="job-header">
-            <img class="job-icon" src="assets/icons/icon-spline.png" alt="">
-            <h3><a href="https://spline.design" target="_blank" rel="noopener noreferrer" class="job-link">Spline</a> — Senior Product Designer</h3>
+    <div class="frame frame-about-experience">
+      <div class="frame-caption">Experience</div>
+      <div class="hover-select frame-object experience-card">
+        <h2 class="about-title">Experience</h2>
+        <div class="experience-list">
+          <div class="job-entry">
+            <div class="job-header">
+              <img class="job-icon" src="assets/icons/icon-buildship.png" alt="">
+              <p><a href="https://buildship.com" target="_blank" rel="noopener noreferrer" class="job-link">BuildShip</a> — Founding Product Designer</p>
+            </div>
+            <p class="job-desc">Designing a low-code visual backend builder to build API's, backend tasks and scheduled jobs.</p>
+            <span class="job-date">2023 - Now</span>
           </div>
-          <p class="job-desc">Building a friendly design tool to create 3D experiences.</p>
-          <span class="job-date">2022 - 2023</span>
-        </div>
 
-        <div class="job-entry">
-          <div class="job-header">
-            <img class="job-icon" src="assets/icons/icon-rows.png" alt="">
-            <h3><a href="https://rows.com" target="_blank" rel="noopener noreferrer" class="job-link">Rows</a> — Senior Product Designer</h3>
+          <div class="job-entry">
+            <div class="job-header">
+              <img class="job-icon" src="assets/icons/icon-spline.png" alt="">
+              <p><a href="https://spline.design" target="_blank" rel="noopener noreferrer" class="job-link">Spline</a> — Senior Product Designer</p>
+            </div>
+            <p class="job-desc">Building a friendly design tool to create 3D experiences.</p>
+            <span class="job-date">2022 - 2023</span>
           </div>
-          <p class="job-desc">Reinventing the concept of spreadsheet as a no-code tool to connect and analyze data.</p>
-          <span class="job-date">2020 - 2022</span>
-        </div>
 
-        <div class="job-entry">
-          <div class="job-header">
-            <img class="job-icon" src="assets/icons/icon-wit.png" alt="">
-            <h3>WIT Software — Senior Product Designer</h3>
+          <div class="job-entry">
+            <div class="job-header">
+              <img class="job-icon" src="assets/icons/icon-rows.png" alt="">
+              <p><a href="https://rows.com" target="_blank" rel="noopener noreferrer" class="job-link">Rows</a> — Senior Product Designer</p>
+            </div>
+            <p class="job-desc">Reinventing the concept of spreadsheet as a no-code tool to connect and analyze data.</p>
+            <span class="job-date">2020 - 2022</span>
           </div>
-          <p class="job-desc">Designing several projects for the telecom industry including Reliance (IN), SoftBank(JP), eir (IE) and Vodafone (UK).</p>
-          <span class="job-date">2013 - 2020</span>
+
+          <div class="job-entry">
+            <div class="job-header">
+              <img class="job-icon" src="assets/icons/icon-wit.png" alt="">
+              <p>WIT Software — Senior Product Designer</h3>
+            </div>
+            <p class="job-desc">Designing several projects for the telecom industry including Reliance (IN), SoftBank(JP), eir (IE) and Vodafone (UK).</p>
+            <span class="job-date">2013 - 2020</span>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <div class="frame frame-credits">
+      <div class="frame-caption">About this site</div>
+      <div class="hover-select frame-object credits-card sticky-note">
+        <p class="sticky-text">Vibecoded end to end, no hand-written code, just a lot of prompts and patience.</p>
+        <p class="sticky-meta">Last commit 09/2026</p>
       </div>
     </div>
 
   </div>
 </div>
+
+<div class="ruler-corner"></div>
+<canvas class="ruler ruler-h" id="ruler-h"></canvas>
+<canvas class="ruler ruler-v" id="ruler-v"></canvas>
 
 <div class="toolbar" id="toolbar">
   <button type="button" class="toolbar-btn is-active" id="tool-hand" aria-label="Hand tool" aria-pressed="true" title="Hand — scroll to pan, ⌘+scroll to zoom, drag a frame to move it">
@@ -161,13 +195,12 @@
       <path d="M8.75715 1.50578H9.05228C8.08753 2.3679 7.46741 3.52789 7.29972 4.7841C7.13203 6.04032 7.42736 7.31333 8.13439 8.38186C8.84141 9.45039 9.91542 10.2469 11.1697 10.6328C12.424 11.0188 13.7793 10.9699 15 10.4946C14.5304 11.5811 13.763 12.5247 12.7795 13.2247C11.796 13.9247 10.6334 14.3549 9.41568 14.4692C8.19795 14.5836 6.97077 14.3779 5.86506 13.8741C4.75934 13.3703 3.81656 12.5873 3.13729 11.6087C2.45801 10.63 2.06772 9.49231 2.00805 8.31703C1.94837 7.14175 2.22155 5.97294 2.79844 4.93526C3.37533 3.89758 4.23429 3.02997 5.28371 2.42497C6.33312 1.81998 7.53362 1.50028 8.75715 1.5V1.50578Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
-  <button type="button" class="toolbar-btn toolbar-help" id="help-btn" aria-label="About this site" aria-expanded="false">
+  <button type="button" class="toolbar-btn" id="zoom-fit-btn" aria-label="Zoom to fit" title="Zoom to fit all elements">
     <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g clip-path="url(#clip0_toolbar_help)">
-        <path d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M8.00014 11.8888V11.8966M8.00014 9.16658C7.98582 8.91409 8.05392 8.66379 8.1942 8.45336C8.33448 8.24294 8.53934 8.0838 8.77791 7.99991C9.07026 7.88811 9.33266 7.70998 9.54447 7.47954C9.75627 7.2491 9.91169 6.97264 9.9985 6.67192C10.0853 6.37121 10.1011 6.05445 10.0447 5.74658C9.98829 5.43872 9.86118 5.14815 9.67338 4.89776C9.48558 4.64736 9.24223 4.44398 8.96247 4.30361C8.68272 4.16325 8.3742 4.08974 8.06121 4.08887C7.74822 4.08801 7.4393 4.1598 7.15877 4.29861C6.87824 4.43742 6.63376 4.63945 6.44458 4.8888" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </g>
-      <defs><clipPath id="clip0_toolbar_help"><rect width="16" height="16" fill="white"/></clipPath></defs>
+      <path d="M1 5V2C1 1.44772 1.44772 1 2 1H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M11 1H14C14.5523 1 15 1.44772 15 2V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15 11V14C15 14.5523 14.5523 15 14 15H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M5 15H2C1.44772 15 1 14.5523 1 14V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
   <span class="toolbar-divider"></span>
@@ -184,11 +217,6 @@
       <button type="button" class="zoom-menu-item" data-zoom="in">Zoom in <span class="zoom-menu-shortcut">⌘+</span></button>
       <button type="button" class="zoom-menu-item" data-zoom="out">Zoom out <span class="zoom-menu-shortcut">⌘-</span></button>
     </div>
-  </div>
-
-  <div class="help-menu" id="help-popover" role="tooltip" hidden>
-    <div class="help-menu-item">Inspired by Figma</div>
-    <div class="help-menu-item">100% vibe-coded</div>
   </div>
 </div>
 
