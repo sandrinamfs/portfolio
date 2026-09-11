@@ -55,14 +55,6 @@
   --toolbar-divider: rgba(0, 0, 0, 0.12);
 }
 
-@media (min-width: 640px) and (max-width: 1023px) {
-  :root { --text-scale: 1.4286; }
-}
-
-@media (max-width: 639px) {
-  :root { --text-scale: 3.3333; }
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -552,13 +544,6 @@ iframe.section-bg-img {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-@media (max-width: 639px) {
-  .ruler,
-  .ruler-corner {
-    display: none;
-  }
-}
-
 /* ---------- Custom cursor tag ---------- */
 
 .cursor-tag {
@@ -800,46 +785,15 @@ iframe.section-bg-img {
   }
 }
 
-/* On mobile the frames stack into one full-width readable column instead of
-   the free-form Figma layout, but the canvas is still panned/zoomed exactly
-   like desktop (see isMobileLayout() in script.js) — only dragging a frame
-   to reposition it is disabled there. */
+/* Mobile and tablet use the exact same layout, styling and behavior as
+   desktop (see layoutFrames() in script.js — it isn't viewport-specific) —
+   the only difference is a smaller default zoom (defaultScaleForViewport())
+   so the whole canvas fits on a smaller screen at a glance. */
 @media (max-width: 639px) {
-  /* Text no longer needs to counteract a zoomed-out canvas scale now that
-     mobile resets to a 1:1 view (see resetView() in script.js). */
-  :root {
-    --text-scale: 1;
-  }
-
-  .canvas {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* The 24px top/left margin comes from view.x/y in resetView() (script.js)
-       — shrinking the width by double that keeps a matching gap on the right. */
-    width: calc(100% - 48px);
-    gap: 48px;
-  }
-
-  .frame {
-    position: static !important;
-    cursor: default;
-  }
-
-  .frame-intro,
-  .intro-content,
-  .frame-media,
-  .media-frame,
-  .frame-about-info,
-  .frame-about-experience,
-  .frame-socials,
-  .frame-credits {
-    width: 100% !important;
-    max-width: 100%;
-  }
-
-  .intro-title,
-  .intro-subtitle {
-    font-size: 32px;
+  /* The collaborator cursor normally only shows on hover, which doesn't
+     really exist on touch — show it unconditionally here instead (see the
+     isMobileLayout() branch in script.js that activates it on load). */
+  .cursor-tag {
+    display: block;
   }
 }

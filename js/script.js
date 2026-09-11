@@ -45,13 +45,6 @@ let topZ = 1;
 const PAN_MARGIN = 120;
 
 function getContentBounds() {
-  // On mobile the frames are stacked in normal flow (not individually
-  // positioned via style.left/top), so the canvas's own box — sized to fit
-  // that stack — is the real content extent.
-  if (isMobileLayout()) {
-    return { minX: 0, minY: 0, maxX: canvas.offsetWidth, maxY: canvas.offsetHeight };
-  }
-
   return frames.reduce(
     (acc, frame) => {
       const left = parseFloat(frame.style.left) || 0;
@@ -179,8 +172,6 @@ function drawRulerAxis(ctx, canvasEl, isHorizontal, viewOffset, length, tickColo
 }
 
 function drawRulers() {
-  if (isMobileLayout()) return;
-
   const rootStyle = getComputedStyle(document.documentElement);
   const tickColor = rootStyle.getPropertyValue('--toolbar-divider').trim();
   const textColor = rootStyle.getPropertyValue('--text-faint').trim();
@@ -236,18 +227,18 @@ function layoutFrames() {
 
 function defaultScaleForViewport() {
   const vw = window.innerWidth;
-  if (vw < 640) return 0.3;
-  if (vw < 1024) return 0.7;
+  if (vw < 640) return 0.4;
+  if (vw < 1024) return 0.6;
   return 1;
 }
 
 function resetView() {
-  // Mobile frames are already full-width and stacked (no zoom shrink needed);
-  // the canvas is still anchored from the top-left with a fixed margin below.
-  view.scale = isMobileLayout() ? 1 : defaultScaleForViewport();
+  // Mobile uses the exact same layout as desktop, just zoomed out further
+  // (see defaultScaleForViewport()) to fit the whole thing on a small screen.
+  view.scale = defaultScaleForViewport();
 
   // Anchored from the top-left corner with a fixed margin — not centered.
-  view.x = isMobileLayout() ? 24 : 140;
+  view.x = isMobileLayout() ? 32 : 140;
   view.y = 40;
   applyTransform();
 }
@@ -281,6 +272,12 @@ Promise.race([mediaReady, mediaTimeout]).then(() => {
     document.body.classList.add('ready');
     document.querySelectorAll('.section-bg-img').forEach((el) => el.classList.add('in-view'));
   });
+
+  // Hover doesn't really exist on touch, so show the collaborator cursor
+  // unconditionally on mobile instead of waiting for a hover that won't come.
+  if (isMobileLayout()) {
+    setActiveCursorSection(document.querySelector('.frame-intro'));
+  }
 });
 
 /* ---------- Wheel: pan and cmd/ctrl+wheel zoom ---------- */
