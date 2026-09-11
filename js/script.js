@@ -227,7 +227,7 @@ function layoutFrames() {
 
 function defaultScaleForViewport() {
   const vw = window.innerWidth;
-  if (vw < 640) return 0.4;
+  if (vw < 640) return 0.3;
   if (vw < 1024) return 0.6;
   return 1;
 }
@@ -238,7 +238,7 @@ function resetView() {
   view.scale = defaultScaleForViewport();
 
   // Anchored from the top-left corner with a fixed margin — not centered.
-  view.x = isMobileLayout() ? 32 : 140;
+  view.x = isMobileLayout() ? 70 : 140;
   view.y = 40;
   applyTransform();
 }
@@ -275,8 +275,10 @@ Promise.race([mediaReady, mediaTimeout]).then(() => {
 
   // Hover doesn't really exist on touch, so show the collaborator cursor
   // unconditionally on mobile instead of waiting for a hover that won't come.
+  // Starts on the first video rather than the intro's "Try dragging me
+  // around" — dragging isn't the point of that message on a touch canvas.
   if (isMobileLayout()) {
-    setActiveCursorSection(document.querySelector('.frame-intro'));
+    setActiveCursorSection(document.querySelector('.frame-media'));
   }
 });
 
@@ -535,8 +537,12 @@ function randomPointInView(frame) {
 
   // The speech bubble grows to the right of this anchor (up to its
   // max-width), not centered on it — keep the anchor far enough from the
-  // right edge that the bubble never gets clipped by the viewport.
-  const BUBBLE_SAFE_MARGIN = 380;
+  // right edge that the bubble never gets clipped by the viewport. On mobile
+  // the tag itself is scaled down to match the small default zoom (see
+  // updateCursorScreenPos()), so the reserved space needs to shrink with it —
+  // otherwise this alone exceeds the whole viewport width and clamps every
+  // point to the far left, regardless of the edge logic above.
+  const BUBBLE_SAFE_MARGIN = isMobileLayout() ? 380 * view.scale : 380;
   point.x = Math.min(point.x, window.innerWidth - BUBBLE_SAFE_MARGIN);
   return point;
 }
@@ -553,7 +559,12 @@ function updateCursorScreenPos() {
   if (!cursorCanvasPos) return;
   const x = cursorCanvasPos.x * view.scale + view.x;
   const y = cursorCanvasPos.y * view.scale + view.y;
-  cursorTag.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  // The tag has a fixed CSS size, so at mobile's small default zoom its
+  // speech bubble dwarfs the shrunk frame and spills past its edges — scale
+  // the whole tag down to match (transform-origin: top left keeps the arrow
+  // tip, its actual anchor point, pinned in place while it shrinks).
+  const scale = isMobileLayout() ? view.scale : 1;
+  cursorTag.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
 }
 
 function scheduleWander(frame) {
