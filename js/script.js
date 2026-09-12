@@ -238,7 +238,7 @@ function resetView() {
   view.scale = defaultScaleForViewport();
 
   // Anchored from the top-left corner with a fixed margin — not centered.
-  view.x = isMobileLayout() ? 70 : 140;
+  view.x = isMobileLayout() ? 35 : 140;
   view.y = 40;
   applyTransform();
 }
@@ -536,13 +536,12 @@ function randomPointInView(frame) {
   }
 
   // The speech bubble grows to the right of this anchor (up to its
-  // max-width), not centered on it — keep the anchor far enough from the
-  // right edge that the bubble never gets clipped by the viewport. On mobile
-  // the tag itself is scaled down to match the small default zoom (see
-  // updateCursorScreenPos()), so the reserved space needs to shrink with it —
-  // otherwise this alone exceeds the whole viewport width and clamps every
-  // point to the far left, regardless of the edge logic above.
-  const BUBBLE_SAFE_MARGIN = isMobileLayout() ? 380 * view.scale : 380;
+  // max-width: min(360px, 55vw) in CSS), not centered on it — keep the
+  // anchor far enough from the right edge that the bubble never gets clipped
+  // by the viewport, mirroring that same cap plus a little room for the
+  // arrow/margin. A flat desktop-sized constant here would exceed a narrow
+  // mobile viewport outright and clamp every point to the far left.
+  const BUBBLE_SAFE_MARGIN = Math.min(360, window.innerWidth * 0.55) + 20;
   point.x = Math.min(point.x, window.innerWidth - BUBBLE_SAFE_MARGIN);
   return point;
 }
@@ -559,12 +558,10 @@ function updateCursorScreenPos() {
   if (!cursorCanvasPos) return;
   const x = cursorCanvasPos.x * view.scale + view.x;
   const y = cursorCanvasPos.y * view.scale + view.y;
-  // The tag has a fixed CSS size, so at mobile's small default zoom its
-  // speech bubble dwarfs the shrunk frame and spills past its edges — scale
-  // the whole tag down to match (transform-origin: top left keeps the arrow
-  // tip, its actual anchor point, pinned in place while it shrinks).
-  const scale = isMobileLayout() ? view.scale : 1;
-  cursorTag.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  // Stays a constant, readable size regardless of canvas zoom — same idea as
+  // the caption/badge counter-scaling — instead of shrinking along with a
+  // small default mobile zoom to the point of being illegible.
+  cursorTag.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
 function scheduleWander(frame) {
