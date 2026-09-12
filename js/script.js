@@ -232,14 +232,27 @@ function defaultScaleForViewport() {
   return 1;
 }
 
+// Anchored from the top-left corner with a fixed margin — not centered.
+function applyDefaultMargin() {
+  view.x = isMobileLayout() ? 48 : 140;
+  view.y = 40;
+}
+
 function resetView() {
   // Mobile uses the exact same layout as desktop, just zoomed out further
   // (see defaultScaleForViewport()) to fit the whole thing on a small screen.
   view.scale = defaultScaleForViewport();
+  applyDefaultMargin();
+  applyTransform();
+}
 
-  // Anchored from the top-left corner with a fixed margin — not centered.
-  view.x = isMobileLayout() ? 48 : 140;
-  view.y = 40;
+// Distinct from resetView(): this is what "100%" actually means, whereas
+// resetView()'s scale is only 100% on desktop by coincidence (its default
+// zoom is smaller everywhere else, to fit the same wide layout on a
+// smaller screen).
+function zoomTo100() {
+  view.scale = 1;
+  applyDefaultMargin();
   applyTransform();
 }
 
@@ -268,6 +281,7 @@ Promise.race([mediaReady, mediaTimeout]).then(() => {
   layoutFrames();
   resetView();
   updateSizeBadges();
+  selectFrame(document.querySelector('.frame-intro'));
   requestAnimationFrame(() => {
     document.body.classList.add('ready');
     document.querySelectorAll('.section-bg-img').forEach((el) => el.classList.add('in-view'));
@@ -304,7 +318,7 @@ window.addEventListener('keydown', (e) => {
 
   if (cmd && e.key === '0') {
     e.preventDefault();
-    resetView();
+    zoomTo100();
   } else if (cmd && (e.key === '=' || e.key === '+')) {
     e.preventDefault();
     zoomAt(window.innerWidth / 2, window.innerHeight / 2, view.scale * 1.2);
@@ -556,11 +570,46 @@ function moveTagTo(frame) {
 
 function updateCursorScreenPos() {
   if (!cursorCanvasPos) return;
-  const x = cursorCanvasPos.x * view.scale + view.x;
-  const y = cursorCanvasPos.y * view.scale + view.y;
-  // Stays a constant, readable size regardless of canvas zoom — same idea as
-  // the caption/badge counter-scaling — instead of shrinking along with a
-  // small default mobile zoom to the point of being illegible.
+  let x = cursorCanvasPos.x * view.scale + view.x;
+  let y = cursorCanvasPos.y * view.scale + view.y;
+
+  // The tag's anchor point is chosen to sit inside its frame, but since the
+  // tag itself no longer scales with the canvas (it stays a constant,
+  // readable size — see the comment this replaced), zooming out shrinks the
+  // frame under it while the tag stays the same size, and it can end up
+  // poking outside. Clamp the tag's box against the frame's current bounds
+  // every time this runs, not just when it's first placed, so it tracks
+  // correctly through any pan/zoom that follows.
+  //
+  // This has to be computed analytically rather than by reading
+  // cursorTag.getBoundingClientRect() — the tag has a CSS transition on
+  // transform, so its rect reflects wherever the animation currently is,
+  // not the target we're about to set. offsetWidth/offsetHeight are layout
+  // values the transition can't touch, so they're used instead.
+  if (activeSection) {
+    const targetEl = activeSection.querySelector('.media-frame') || activeSection;
+    const frameRect = targetEl.getBoundingClientRect();
+    const tagW = cursorTag.offsetWidth;
+    const tagH = cursorTag.offsetHeight;
+
+    if (tagW <= frameRect.width) {
+      if (x + tagW > frameRect.right) x = frameRect.right - tagW;
+      if (x < frameRect.left) x = frameRect.left;
+    } else {
+      // Frame too small to fully contain the tag at its fixed size (common
+      // for smaller frames at mobile's default zoom) — center it over the
+      // frame instead, the closest thing to "inside" available.
+      x = frameRect.left + frameRect.width / 2 - tagW / 2;
+    }
+
+    if (tagH <= frameRect.height) {
+      if (y + tagH > frameRect.bottom) y = frameRect.bottom - tagH;
+      if (y < frameRect.top) y = frameRect.top;
+    } else {
+      y = frameRect.top + frameRect.height / 2 - tagH / 2;
+    }
+  }
+
   cursorTag.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
@@ -575,11 +624,6 @@ function scheduleWander(frame) {
 }
 
 function setActiveCursorSection(section) {
-  // "Try dragging me around" doesn't apply on mobile (frame-dragging is
-  // disabled there — see isMobileLayout() elsewhere), so skip it entirely.
-  if (isMobileLayout() && section && section.classList.contains('frame-intro')) {
-    section = null;
-  }
   if (section === activeSection) return;
   activeSection = section;
   clearTimeout(wanderTimer);
@@ -682,7 +726,7 @@ zoomFitBtn.addEventListener('click', (e) => {
   toggleZoomMenu(false);
 
   if (isFitted) {
-    resetView();
+    zoomTo100();
   } else {
     zoomToFit();
   }
@@ -711,7 +755,7 @@ zoomMenu.querySelectorAll('.zoom-menu-item').forEach((item) => {
     const cx = window.innerWidth / 2;
     const cy = window.innerHeight / 2;
 
-    if (action === 'reset') resetView();
+    if (action === 'reset') zoomTo100();
     else if (action === 'in') zoomAt(cx, cy, view.scale * 1.2);
     else if (action === 'out') zoomAt(cx, cy, view.scale / 1.2);
     else zoomAt(cx, cy, parseFloat(action));
