@@ -64,6 +64,12 @@
 html, body {
   height: 100%;
   overflow: hidden;
+  /* Disables Safari/Chrome-iOS's automatic text-size inflation (both run on
+     WebKit, which boosts font-size per element based on its own container
+     width) — without this, our identically-sized captions render at visibly
+     different sizes depending on how wide the frame they're attached to is. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -550,7 +556,7 @@ iframe.section-bg-img {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 999;
+  z-index: 890;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.25s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -596,7 +602,7 @@ iframe.section-bg-img {
   background: var(--cursor-color, #111111);
   color: var(--cursor-text-color, #ffffff);
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.45;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);

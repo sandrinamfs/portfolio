@@ -238,7 +238,7 @@ function resetView() {
   view.scale = defaultScaleForViewport();
 
   // Anchored from the top-left corner with a fixed margin — not centered.
-  view.x = isMobileLayout() ? 35 : 140;
+  view.x = isMobileLayout() ? 48 : 140;
   view.y = 40;
   applyTransform();
 }
@@ -575,6 +575,11 @@ function scheduleWander(frame) {
 }
 
 function setActiveCursorSection(section) {
+  // "Try dragging me around" doesn't apply on mobile (frame-dragging is
+  // disabled there — see isMobileLayout() elsewhere), so skip it entirely.
+  if (isMobileLayout() && section && section.classList.contains('frame-intro')) {
+    section = null;
+  }
   if (section === activeSection) return;
   activeSection = section;
   clearTimeout(wanderTimer);
